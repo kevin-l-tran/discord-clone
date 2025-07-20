@@ -13,3 +13,18 @@ class User(Document):
 
     def check_password(self, password: str) -> bool:
         return flask_bcrypt.check_password_hash(self.password_hash, password)
+
+    meta = {
+        "indexes": [
+            {
+                "fields": ["username"],
+                "unique": True,
+                "collation": {"locale": "en", "strength": 2},
+            },
+            {
+                "fields": ["email"],
+                "unique": True,
+                "collation": {"locale": "en", "strength": 2},
+            }
+        ]
+    }
