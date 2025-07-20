@@ -1,0 +1,15 @@
+from mongoengine import Document, StringField, EmailField
+
+from . import flask_bcrypt
+
+
+class User(Document):
+    name = StringField(required=True)
+    email = EmailField(required=True, unique=True)
+    password_hash = StringField(required=True, min_length=60)
+
+    def set_password(self, password: str):
+        self.password_hash = flask_bcrypt.generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return flask_bcrypt.check_password_hash(self.password_hash, password)
