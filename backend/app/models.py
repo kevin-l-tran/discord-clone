@@ -4,7 +4,7 @@ from . import flask_bcrypt
 
 
 class User(Document):
-    name = StringField(required=True, min_length=4)
+    name = StringField(required=True, unique=True, min_length=4)
     email = EmailField(required=True, unique=True)
     password_hash = StringField(required=True, min_length=60)
 
