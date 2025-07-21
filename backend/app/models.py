@@ -11,7 +11,7 @@ class User(Document):
     def set_password(self, password: str):
         if len(password) < 8:
             raise ValidationError("Password must be at least 8 characters")
-        self.password_hash = flask_bcrypt.generate_password_hash(password)
+        self.password_hash = flask_bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password: str) -> bool:
         return flask_bcrypt.check_password_hash(self.password_hash, password)
