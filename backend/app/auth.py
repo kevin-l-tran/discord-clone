@@ -1,12 +1,10 @@
-import requests
-
 from flask import Blueprint, request, jsonify, current_app, url_for
 from flask_jwt_extended import create_access_token, current_user, jwt_required
 from bson import ObjectId
 
 from . import jwt
 from .models import User
-from .utilities import require_json_fields
+from .utilities import require_json_fields, api_get
 
 auth = Blueprint("auth", __name__)
 
@@ -47,32 +45,22 @@ def signup():
         return jsonify({"err": "Email taken"}), 409
 
     # email validate api
-    api_url = "https://api.api-ninjas.com/v1/validateemail?email={}".format(email)
-    try:
-        response = requests.get(
-            api_url, headers={"X-Api-Key": current_app.config["NINJA_API_KEY"]}
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return jsonify({"err": "Update failed", "details": str(e)}), 502
-    else:
-        if not response.json()["is_valid"]:
-            return jsonify({"err": "Invalid email"}), 422
-        if response.json()["is_disposable"]:
-            return jsonify({"err": "Disposable email"}), 422
+    url = "https://api.api-ninjas.com/v1/validateemail"
+    params = {"email": email}
+    headers = {"X-Api-Key": current_app.config["NINJA_API_KEY"]}
+    response = api_get(url=url, params=params, headers=headers)
+    if not response.get("is_valid"):
+        return jsonify({"err": "Invalid email"}), 422
+    if response.get("is_disposable"):
+        return jsonify({"err": "Disposable email"}), 422
 
     # profanity check api
-    api_url = "https://api.api-ninjas.com/v1/profanityfilter?text={}".format(username)
-    try:
-        response = requests.get(
-            api_url, headers={"X-Api-Key": current_app.config["NINJA_API_KEY"]}
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return jsonify({"err": "Update failed", "details": str(e)}), 502
-    else:
-        if response.json()["has_profanity"]:
-            return jsonify({"err": "Username has profanity"}), 422
+    url = "https://api.api-ninjas.com/v1/profanityfilter"
+    params = {"text": username}
+    headers = {"X-Api-Key": current_app.config["NINJA_API_KEY"]}
+    response = api_get(url=url, params=params, headers=headers)
+    if response.get("has_profanity"):
+        return jsonify({"err": "Username has profanity"}), 422
 
     if len(username) < 4:
         return jsonify({"err": "Username too short"}), 422
@@ -105,38 +93,30 @@ def currentuser():
 
 @auth.route("/check/email", methods=["GET"])
 def check_email():
-    email = request.args.get("email")
-    api_url = "https://api.api-ninjas.com/v1/validateemail?email={}".format(email)
-    try:
-        response = requests.get(
-            api_url, headers={"X-Api-Key": current_app.config["NINJA_API_KEY"]}
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return jsonify({"err": "Update failed", "details": str(e)}), 502
-    else:
-        if not response.json()["is_valid"]:
-            return jsonify({"err": "Invalid email"}), 422
-        if response.json()["is_disposable"]:
-            return jsonify({"err": "Disposable email"}), 422
+    url = "https://api.api-ninjas.com/v1/validateemail"
+    params = {"email": request.args.get("email")}
+    headers = {"X-Api-Key": current_app.config["NINJA_API_KEY"]}
+    response = api_get(url=url, params=params, headers=headers)
 
-        return jsonify({"msg": "Good email"}), 200
+    if not response.get("is_valid"):
+        return jsonify({"err": "Invalid email"}), 422
+    if response.get("is_disposable"):
+        return jsonify({"err": "Disposable email"}), 422
+
+    return jsonify({"msg": "Good email"}), 200
 
 
 @auth.route("/check/profanity", methods=["GET"])
 def check_profanity():
-    text = request.args.get("text")
-    api_url = "https://api.api-ninjas.com/v1/profanityfilter?text={}".format(text)
-    try:
-        response = requests.get(
-            api_url, headers={"X-Api-Key": current_app.config["NINJA_API_KEY"]}
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return jsonify({"err": "Update failed", "details": str(e)}), 502
-    else:
-        if response.json()["has_profanity"]:
-            return jsonify({"err": "Username has profanity"}), 422
+    url = "https://api.api-ninjas.com/v1/profanityfilter"
+    params = {"text": request.args.get("text")}
+    headers = {"X-Api-Key": current_app.config["NINJA_API_KEY"]}
+    response = api_get(url=url, params=params, headers=headers)
+
+    if response.get("has_profanity"):
+        return jsonify({"err": "Text has profanity"}), 422
+
+    return jsonify({"msg": "No profanity"}), 200
 
 
 @jwt.user_identity_loader
