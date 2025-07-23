@@ -32,11 +32,9 @@ def api_get(
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
         current_app.logger.error("API GET %s failed: %s", url, e)
-        # if it has a HTTP status, attach it; otherwise None
         code = getattr(e.response, "status_code", None)
         raise ApiError(f"GET {url} failed: {e}", status_code=code)
 
-    # parse JSON (will raise if invalid JSON)
     try:
         return resp.json()
     except ValueError as e:
