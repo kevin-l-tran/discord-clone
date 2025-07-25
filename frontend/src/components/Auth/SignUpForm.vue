@@ -14,7 +14,7 @@ const emailInput = ref(null);
 const usernameInput = ref(null);
 const passwordInput = ref(null);
 
-async function signin() {
+async function signup() {
     const payload = { email: email.value, username: username.value, password: password.value };
 
     emailWarn.value = '';
@@ -42,9 +42,41 @@ async function signin() {
         if (!firstInvalid) firstInvalid = passwordInput;
     }
 
+    // check email taken
+    try {
+        const res = await fetch(BACKEND_URL + '/check/email-taken?email=' + email.value, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+            emailWarn.value = "Email taken. Please use a different email";
+            if (!firstInvalid) firstInvalid = emailInput;
+        }
+    } catch (err) {
+        _handleNetworkError(err);
+        return;
+    }
+
+    // check username taken
+    try {
+        const res = await fetch(BACKEND_URL + '/check/username-taken?username=' + username.value, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+            usernameWarn.value = "Username taken. Please use a different name";
+            if (!firstInvalid) firstInvalid = usernameInput;
+        }
+    } catch (err) {
+        _handleNetworkError(err);
+        return;
+    }
+
     // check email validity
     try {
-        const res = await fetch(BACKEND_URL + '/check/email?email=' + email.value, {
+        const res = await fetch(BACKEND_URL + '/check/valid-email?email=' + email.value, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
         });
@@ -60,8 +92,7 @@ async function signin() {
             if (!firstInvalid) firstInvalid = emailInput;
         }
     } catch (err) {
-        console.error(err);
-        alert("An unexpected network error occurred. Please try again later.");
+        _handleNetworkError(err);
         return;
     }
 
@@ -77,8 +108,7 @@ async function signin() {
             if (!firstInvalid) firstInvalid = usernameInput;
         }
     } catch (err) {
-        console.error(err);
-        alert("An unexpected network error occurred. Please try again later.");
+        _handleNetworkError(err);
         return;
     }
 
@@ -107,14 +137,19 @@ async function signin() {
             alert('Login failed: ' + data.err);
         }
     } catch (err) {
-        console.error(err);
-        alert("An unexpected network error occurred. Please try again later.");
+        _handleNetworkError(err);
     }
 }
+
+function _handleNetworkError(err: unknown) {
+    console.error(err)
+    alert('An unexpected network error occurred. Please try again later.')
+}
+
 </script>
 
 <template>
-    <form class="flex flex-col items-center justify-center" @submit.prevent="signin">
+    <form class="flex flex-col items-center justify-center" @submit.prevent="signup">
         <h2 class="text-3xl font-bold mb-4">Create Account</h2>
         <input type="email" placeholder="Email" id="email" v-model="email" ref="emailInput"
             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-400"
