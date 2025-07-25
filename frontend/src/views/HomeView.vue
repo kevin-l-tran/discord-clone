@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AuthModal from '@/components/AuthModal.vue'
+import { ref } from 'vue';
 
-
+const showAuth = ref(false);
 </script>
 
 <template>
@@ -23,12 +24,12 @@ import AuthModal from '@/components/AuthModal.vue'
 
     <!-- modal popups -->
     <nav class="mt-18 flex w-full max-w-md mx-auto">
-      <button class="px-4 py-2 border border-white/70 hover:bg-white/10 transition flex-1 bg-blue-400 cursor-pointer">Get Started</button>
+      <button class="px-4 py-2 border border-white/70 hover:bg-white/10 transition flex-1 bg-blue-400 cursor-pointer" @click="showAuth = true">Get Started</button>
       <button class="px-4 py-2 border border-white/70 hover:bg-white/10 transition flex-1 cursor-pointer">About</button>
     </nav>
 
     <Teleport to="body">
-      <AuthModal></AuthModal>
+      <AuthModal v-show="showAuth" @close="showAuth = false"></AuthModal>
     </Teleport>
   </div>
 </template>
