@@ -42,8 +42,10 @@ def create_app(config_object="config.DevelopmentConfig"):
             raise
 
     from .auth import auth
+    from .groups import groups
 
     app.register_blueprint(auth, urlprefix='/')
+    app.register_blueprint(groups, urlprefix='/')
 
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
