@@ -76,7 +76,11 @@ def signup():
     user.username = username
     user.email = email
     user.set_password(password)
-    user.save(force_insert=True)
+    try:
+        user.save(force_insert=True)
+    except Exception as e:
+        current_app.logger.error("Failed to save User: %s", e)
+        return jsonify({"err": "Could not create user"}), 500
 
     access_token = create_access_token(identity=user)
     return (
