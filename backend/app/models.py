@@ -24,7 +24,7 @@ from . import flask_bcrypt
 
 
 class TimestampedDocument(Document):
-    created_at = DateTimeField(default=lambda: datetime.now(timezone.utcnow))
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     meta = {"abstract": True}
 
 
@@ -133,7 +133,7 @@ class ChannelPermissionOverride(Document):
 class MessageQuerySet(QuerySet):
     def delete(self):  # soft‑delete: mark deleted_at and flag, don’t remove
         return super().update(
-            deleted_at=lambda: datetime.now(timezone.utcnow), is_deleted=True
+            deleted_at=lambda: datetime.now(timezone.utc), is_deleted=True
         )
 
     def hard_delete(self):  # truly delete documents
