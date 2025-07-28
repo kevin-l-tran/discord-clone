@@ -149,7 +149,10 @@ def generate_signed_url(
         google.api_core.exceptions.GoogleAPIError:
             If there’s a problem communicating with GCS or signing the URL.
     """
-    bucket = storage.Client.bucket(bucket_name)
+    key_path = current_app.config.get("G_SECRETS_FILE")
+    creds = service_account.Credentials.from_service_account_file(key_path)
+    storage_client = storage.Client(credentials=creds, project=creds.project_id) 
+    bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
     return blob.generate_signed_url(
         expiration=datetime.timedelta(seconds=expires_in_seconds),
@@ -175,7 +178,10 @@ def delete_blob(bucket_name: str, blob_name: str) -> None:
         google.api_core.exceptions.GoogleAPIError:
             For other GCS errors (permissions, network issues, etc.).
     """
-    bucket = storage.Client.bucket(bucket_name)
+    key_path = current_app.config.get("G_SECRETS_FILE")
+    creds = service_account.Credentials.from_service_account_file(key_path)
+    storage_client = storage.Client(credentials=creds, project=creds.project_id)
+    bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
     blob.delete()
 

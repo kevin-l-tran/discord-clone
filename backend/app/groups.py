@@ -224,5 +224,5 @@ def delete_group(group_id):
         current_app.logger.warning("Group image not found")
         return "", 204
     except Exception:
-        current_app.logger.warning("Failed to delete image")
+        current_app.logger.exception("Failed to delete image for %s", group_id)
         return "", 204
