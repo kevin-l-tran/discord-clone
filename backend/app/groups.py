@@ -1,7 +1,7 @@
 import uuid
 
-from flask import Blueprint, current_app, json, jsonify, request, url_for
-from flask_jwt_extended import current_user, jwt_required
+from flask import Blueprint, current_app, jsonify, request, url_for
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from mongoengine.errors import DoesNotExist, ValidationError
 from werkzeug.utils import secure_filename
 from bson import ObjectId
@@ -15,14 +15,14 @@ groups = Blueprint("groups", __name__)
 @groups.route("/user-groups", methods=["GET"])
 @jwt_required()
 def get_groups():
-    memberships = GroupMembership.objects(user=current_user).select_related()
+    memberships = GroupMembership.objects(user=get_jwt_identity()).select_related()
     groups = []
     for membership in memberships:
         group = membership.group.fetch()
-        data = group.to_mongo().to_dict()      
+        data = group.to_mongo().to_dict()
 
-        data['id'] = str(data.pop('_id'))
-        data['created_at'] = data.pop('created_at').isoformat()
+        data["id"] = str(data.pop("_id"))
+        data["created_at"] = data.pop("created_at").isoformat()
 
         groups.append(data)
 
@@ -46,7 +46,7 @@ def get_group(group_id):
             "id": str(group.id),
             "name": group.name,
             "description": group.description,
-            "img": group.img,
+            "img_path": group.img_path,
             "created_at": group.created_at.isoformat(),
         }
     ), 200
@@ -58,6 +58,8 @@ def create_group():
     name = request.form.get("name")
     if not name:
         return jsonify({"err": "Missing group name"}), 400
+    if len(name) < 4:
+        return jsonify({"err": "Name too short"}), 422
 
     description = request.form.get("description", "").strip()
     if len(description) > 150:
@@ -79,7 +81,7 @@ def create_group():
     unique = f"groups/{group_id}/{uuid.uuid4().hex}_{original}"
 
     try:
-        public_url = upload_to_gcs(
+        upload_to_gcs(
             file=img_file,
             bucket_name=current_app.config["GCS_BUCKET_NAME"],
             blob_name=unique,
@@ -87,10 +89,14 @@ def create_group():
     except Exception as e:
         current_app.logger.exception("Failed to upload group image: %s", e)
         return jsonify({"err": "Image upload failed"}), 500
+    
+    group.img_path = unique
 
-    membership = GroupMembership(user=current_user, group=group, role=RoleType.OWNER)
+    # add creator as owner of group
+    membership = GroupMembership(
+        user=get_jwt_identity(), group=group, role=RoleType.OWNER
+    )
 
-    group.img = public_url
     try:
         group.save()
         membership.save()
@@ -106,7 +112,7 @@ def create_group():
                 "id": str(group.id),
                 "name": group.name,
                 "description": group.description,
-                "img": group.img,
+                "img_path": group.img_path,
                 "created_at": group.created_at.isoformat(),
             }
         ),
@@ -117,3 +123,67 @@ def create_group():
             )
         },
     )
+
+
+@groups.route("/group/<group_id>", methods=["PATCH"])
+@jwt_required()
+def update_group(group_id):
+    try:
+        group = Group.objects.get(id=group_id)
+    except DoesNotExist:
+        return jsonify({"err": "Group not found"}), 404
+    except ValidationError:
+        return jsonify({"err": "Invalid group id"}), 400
+
+    try:
+        membership = GroupMembership.objects.get(user=get_jwt_identity(), group=group)
+    except DoesNotExist:
+        return jsonify({"err": "Not authorized"}), 401
+
+    if membership.role != RoleType.OWNER:
+        return jsonify({"err": "Not authorized"}), 401
+
+    name = request.form.get("name", "").strip()
+    if name:
+        if len(name) < 4:
+            return jsonify({"err": "Name too short"}), 422
+        group.name = name
+
+    description = request.form.get("description", "").strip()
+    if description:
+        if len(description) > 150:
+            return jsonify({"err": "Description too long"}), 422
+        group.description = description
+
+    img_file = request.files.get("img")
+    if img_file:
+        err = validate_image_file(img_file)
+        if err:
+            payload, code = err
+            return jsonify(payload), code
+
+        try:
+            upload_to_gcs(
+                file=img_file,
+                bucket_name=current_app.config["GCS_BUCKET_NAME"],
+                blob_name=group.img_path,
+            )
+        except Exception:
+            current_app.logger.exception("Failed to upload new group image")
+            return jsonify({"err": "Image upload failed"}), 502
+
+    try:
+        group.save()
+    except Exception:
+        current_app.logger.exception("Failed to update group")
+        return jsonify(err="Could not update group"), 500
+
+    return jsonify(
+        {
+            "id": str(group.id),
+            "name": group.name,
+            "description": group.description,
+            "img_path": group.img_path,
+            "created_at": group.created_at.isoformat(),
+        }
+    ), 200

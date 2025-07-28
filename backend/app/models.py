@@ -62,7 +62,7 @@ class User(TimestampedDocument):
 class Group(TimestampedDocument):
     name = StringField(required=True, min_length=4)
     description = StringField(max_length=150, null=True)
-    img = URLField(required=True)
+    img_path = StringField(null=True)
 
 
 class RoleType(Enum):
