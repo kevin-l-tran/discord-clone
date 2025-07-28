@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 from flask import Response, current_app, jsonify, request
 from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
@@ -119,11 +120,42 @@ def upload_to_gcs(file: FileStorage, bucket_name: str, blob_name: str) -> str:
     blob.upload_from_file(file, content_type=file.content_type)
 
     url = blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(minutes=15),
-        method="GET"
+        version="v4", expiration=timedelta(minutes=15), method="GET"
     )
     return url
+
+
+def generate_signed_url(
+    blob_name: str, bucket_name: str, expires_in_seconds: int = 900
+) -> str:
+    """
+    Generate a V4 signed URL for downloading a blob from Google Cloud Storage.
+    This URL is valid for a limited time and uses the HTTP GET method.
+
+    Args:
+        blob_name:
+            The path to the object within the bucket (e.g.
+            "groups/1234/avatar.jpg").
+        bucket_name:
+            The name of the GCS bucket containing the object.
+        expires_in_seconds:
+            How many seconds from now the URL should remain valid.
+            Defaults to 900 (15 minutes).
+
+    Returns:
+        A signed URL string that clients can use to download the object.
+
+    Raises:
+        google.api_core.exceptions.GoogleAPIError:
+            If there’s a problem communicating with GCS or signing the URL.
+    """
+    bucket = storage.Client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    return blob.generate_signed_url(
+        expiration=datetime.timedelta(seconds=expires_in_seconds),
+        version="v4",
+        method="GET",
+    )
 
 
 def validate_image_file(
