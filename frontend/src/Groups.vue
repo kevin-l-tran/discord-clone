@@ -30,6 +30,10 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+function redirect(group_id: string) {
+  window.location.href = '/chat/#/' + group_id;
+}
 </script>
 
 <template>
@@ -50,16 +54,19 @@ onMounted(async () => {
     </header>
 
     <div class="flex flex-wrap gap-10 m-8 relative z-10">
-      <GroupCard v-for="group in groups" :key="group.id" :group-image="group.img_url" :group-name="group.name" :group-description="group.description">
+      <GroupCard v-for="group in groups" :key="group.id" :group-image="group.img_url" :group-name="group.name"
+        :group-description="group.description" @click="redirect(group.id)">
       </GroupCard>
 
       <div
         class="w-80 bg-white shadow-lg rounded-xl border-3 border-white flex justify-evenly overflow-hidden transition duration-500 hover:shadow-xl hover:border-sky-300 flex flex-col items-center justify-between">
-        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10" @click="showAdd = true">
+        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10"
+          @click="showAdd = true">
           + Add
         </button>
         <div class="w-64 h-1 bg-gray-300" />
-        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10" @click="showCreate = true">
+        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10"
+          @click="showCreate = true">
           + Create
         </button>
       </div>
