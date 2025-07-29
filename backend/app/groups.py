@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from bson import ObjectId
 
 from .models import Group, GroupMembership, RoleType
-from .utilities import delete_blob, upload_to_gcs, validate_image_file
+from .utilities import delete_blob, generate_signed_url, upload_to_gcs, validate_image_file
 
 groups = Blueprint("groups", __name__)
 
@@ -24,6 +24,15 @@ def get_groups():
 
         data["id"] = str(data.pop("_id"))
         data["created_at"] = data.pop("created_at").isoformat()
+
+        try:
+            img_url = generate_signed_url(
+                blob_name = group.img_path,
+                bucket_name = current_app.config["GCS_BUCKET_NAME"]
+            )
+        except Exception as e:
+            current_app.logger.exception("Failed to get group image url: %s", e)
+        data["img_url"] = img_url
 
         groups.append(data)
 
@@ -41,6 +50,14 @@ def get_group(group_id):
         return jsonify({"err": "Group not found"}), 404
     except ValidationError:
         return jsonify({"err": "Invalid group ID"}), 400
+    
+    try:
+        img_url = generate_signed_url(
+            blob_name = group.img_path,
+            bucket_name = current_app.config["GCS_BUCKET_NAME"]
+        )
+    except Exception as e:
+        current_app.logger.exception("Failed to get group image url: %s", e)
 
     return jsonify(
         {
@@ -48,6 +65,7 @@ def get_group(group_id):
             "name": group.name,
             "description": group.description,
             "img_path": group.img_path,
+            "img_url": img_url,
             "created_at": group.created_at.isoformat(),
         }
     ), 200
@@ -106,6 +124,14 @@ def create_group():
             group.delete()
         current_app.logger.exception("Failed to save Group or Membership: %s", e)
         return jsonify({"err": "Could not create group"}), 500
+    
+    try:
+        img_url = generate_signed_url(
+            blob_name = group.img_path,
+            bucket_name = current_app.config["GCS_BUCKET_NAME"]
+        )
+    except Exception as e:
+        current_app.logger.exception("Failed to get group image url: %s", e)
 
     return (
         jsonify(
@@ -114,6 +140,7 @@ def create_group():
                 "name": group.name,
                 "description": group.description,
                 "img_path": group.img_path,
+                "img_url": img_url,
                 "created_at": group.created_at.isoformat(),
             }
         ),
@@ -178,6 +205,14 @@ def update_group(group_id):
     except Exception:
         current_app.logger.exception("Failed to update group")
         return jsonify(err="Could not update group"), 500
+    
+    try:
+        img_url = generate_signed_url(
+            blob_name = group.img_path,
+            bucket_name = current_app.config["GCS_BUCKET_NAME"]
+        )
+    except Exception as e:
+        current_app.logger.exception("Failed to get group image url: %s", e)
 
     return jsonify(
         {
@@ -185,6 +220,7 @@ def update_group(group_id):
             "name": group.name,
             "description": group.description,
             "img_path": group.img_path,
+            "img_url": img_url,
             "created_at": group.created_at.isoformat(),
         }
     ), 200
