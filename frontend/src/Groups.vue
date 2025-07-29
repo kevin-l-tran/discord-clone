@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import GroupCard from './components/Group/GroupCard.vue';
+import CreateGroupModal from './components/Group/CreateGroupModal.vue';
+
+import { ref } from 'vue';
+
+const showCreate = ref(false);
 
 const tempGroups = [
   {
@@ -44,12 +49,14 @@ const tempGroups = [
           + Add
         </button>
         <div class="w-64 h-1 bg-gray-300" />
-        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10">
+        <button class="text-5xl font-semibold text-gray-800 hover:text-sky-600 transition cursor-pointer p-10" @click="showCreate = true">
           + Create
         </button>
       </div>
     </div>
   </div>
 
-
+  <Teleport to="body">
+    <CreateGroupModal v-show="showCreate" @close="showCreate = false"></CreateGroupModal>
+  </Teleport>
 </template>
