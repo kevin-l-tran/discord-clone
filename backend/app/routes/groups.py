@@ -7,8 +7,8 @@ from google.api_core.exceptions import NotFound
 from werkzeug.utils import secure_filename
 from bson import ObjectId
 
-from .models import Group, GroupMembership, RoleType
-from .utilities import delete_blob, generate_signed_url, require_group_membership, upload_to_gcs, validate_image_file
+from ..db.models import Group, GroupMembership, RoleType
+from ..services.utilities import delete_blob, generate_signed_url, require_group_membership, upload_to_gcs, validate_image_file
 
 groups = Blueprint("groups", __name__)
 

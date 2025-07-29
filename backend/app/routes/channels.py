@@ -2,8 +2,8 @@ from flask import Blueprint, current_app, jsonify, request, url_for
 from flask_jwt_extended import jwt_required
 from mongoengine.errors import DoesNotExist, ValidationError
 
-from .models import ChannelType, Group, Channel, RoleType
-from .utilities import require_group_membership, require_json_fields
+from ..db.models import ChannelType, Group, Channel, RoleType
+from ..services.utilities import require_group_membership, require_json_fields
 
 channels = Blueprint("channels", __name__)
 

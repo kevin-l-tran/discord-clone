@@ -12,7 +12,7 @@ from datetime import timedelta
 from functools import wraps
 from PIL import Image
 
-from .models import GroupMembership, RoleType
+from ..db.models import GroupMembership, RoleType
 
 
 class ApiError(Exception):

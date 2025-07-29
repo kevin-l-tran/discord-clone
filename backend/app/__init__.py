@@ -50,10 +50,10 @@ def create_app(config_object="config.DevelopmentConfig"):
             app.logger.critical("❌ Gemini initialization failed: %s", e)
             raise
 
-    from .auth import auth
-    from .groups import groups
-    from .memberships import memberships
-    from .channels import channels
+    from .routes.auth import auth
+    from .routes.groups import groups
+    from .routes.memberships import memberships
+    from .routes.channels import channels
 
     app.register_blueprint(auth, urlprefix='/')
     app.register_blueprint(groups, urlprefix='/')

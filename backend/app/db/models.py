@@ -17,7 +17,7 @@ from mongoengine import (
     EnumField,
 )
 
-from . import flask_bcrypt
+from .. import flask_bcrypt
 
 
 class TimestampedDocument(Document):

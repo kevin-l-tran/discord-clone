@@ -2,8 +2,8 @@ from flask import Blueprint, current_app, jsonify, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError
 
-from .utilities import require_group_membership
-from .models import Group, GroupMembership, RoleType
+from ..services.utilities import require_group_membership
+from ..db.models import Group, GroupMembership, RoleType
 
 memberships = Blueprint("memberships", __name__)
 

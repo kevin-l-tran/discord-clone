@@ -7,9 +7,9 @@ from flask_jwt_extended import (
 )
 from bson import ObjectId
 
-from . import jwt
-from .models import User
-from .utilities import require_json_fields, api_get
+from .. import jwt
+from ..db.models import User
+from ..services.utilities import require_json_fields, api_get
 
 auth = Blueprint("auth", __name__)
 
