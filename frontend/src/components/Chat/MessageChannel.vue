@@ -1,18 +1,19 @@
-<script setup>
+<script setup lang="ts">
+import { ref } from 'vue';
+
 defineProps({
     channel: {
         type: Object
     },
-    messages: {
-        type: Array
-    }
 });
+
+const messages = ref([]);
 </script>
 
 <template>
     <!-- Header -->
     <header class="flex items-center h-16 px-6 bg-white border-b border-gray-200">
-        <span class="text-xl font-bold text-gray-900">#{{ channel.name }}</span>
+        <span class="text-xl font-bold text-gray-900"># {{ channel.name }}</span>
     </header>
     <!-- Chat Messages -->
     <section class="flex-1 overflow-y-auto px-6 py-4 bg-gray-50">
