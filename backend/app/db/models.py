@@ -174,6 +174,7 @@ class Message(TimestampedDocument):
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
             "is_deleted": self.is_deleted,
             "reply_to": str(self.reply_to.id) if self.reply_to else None,
+            "created_at": self.created_at.isoformat(),
         }
         if self.is_deleted:
             base.update(content="This message was deleted.", attachments=[])
