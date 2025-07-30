@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { BACKEND_URL, GEMINI_API_KEY } from '../../config';
 import { GoogleGenAI } from "@google/genai";
 
+
 // Props
 const props = defineProps<{
     channel: { id: string; name: string },
@@ -23,6 +24,7 @@ const ai_config = {
     },
     ai_tools,
     responseMimeType: 'text/plain',
+    systemInstruction: "You reply very tersely",
 };
 const chat = ai.chats.create({
     model: 'gemini-2.5-flash',
@@ -176,6 +178,7 @@ onMounted(() => {
         // Ensure message is for current channel
         if (payload.channel === channel.id || payload.channel_id === channel.id) {
             console.log(payload);
+            payload.created_at = new Date(payload.created_at).toUTCString();
             messages.value.push(payload);
             appendUsername(payload);
             scrollToBottom();
@@ -243,8 +246,8 @@ function appendUsername(message) {
             <input v-model="newText" class="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-500"
                 :placeholder="`Message #${channel.name}`" />
             <button type="submit"
-                class="ml-3 px-3 py-1 rounded-lg bg-indigo-600 text-white font-semibold transition hover:bg-indigo-700">
-                Send
+                class="ml-3 px-3 py-1 rounded-lg bg-indigo-600 text-white font-semibold cursor-pointer transition hover:bg-indigo-700">
+                {{ !askAI ? 'Send' : 'Ask Gemini' }}
             </button>
             <!-- radio buttons -->
             <div class="ml-4 flex items-center space-x-4">
