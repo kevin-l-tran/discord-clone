@@ -7,7 +7,7 @@ from google.api_core.exceptions import NotFound
 from werkzeug.utils import secure_filename
 from bson import ObjectId
 
-from ..db.models import Group, GroupMembership, RoleType
+from ..db.models import Channel, Group, GroupMembership, RoleType
 from ..services.utilities import delete_blob, generate_signed_url, require_group_membership, upload_to_gcs, validate_image_file
 
 groups = Blueprint("groups", __name__)
@@ -115,9 +115,16 @@ def create_group():
         user=get_jwt_identity(), group=group, role=RoleType.OWNER
     )
 
+    # add default text channel
+    channel = Channel(
+        group = group,
+        name = "general",
+    )
+
     try:
         group.save()
         membership.save()
+        channel.save()
     except Exception as e:
         if group.pk:
             group.delete()
