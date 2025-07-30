@@ -1,6 +1,6 @@
 from bson import ObjectId
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import current_user, get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from google.cloud.exceptions import GoogleCloudError
 from mongoengine.errors import DoesNotExist, ValidationError
 from dateutil import parser as date_parser
@@ -25,40 +25,36 @@ def get_messages(group_id, channel_id):
     except ValidationError:
         return jsonify({"err": "Invalid channel ID"}), 400
 
-    limit = request.args.get("limit", default=50, type=int)
-    if limit < 1:
-        return jsonify({"err": "Limit must be at least 1"}), 400
+    limit = max(1, request.args.get("limit", 50, int))
 
-    before_ts = request.args.get("before", type=str)
-    before_id = request.args.get("before_id", type=str)
-
-    raw = Message.objects(channel=channel_id)
-
-    if before_ts:
+    query = {"channel": ObjectId(channel_id)}
+    if before_ts := request.args.get("before"):
         try:
-            cut_off = date_parser.isoparse(before_ts)
-        except (ValueError, TypeError):
-            return jsonify({"err": "Invalid before timestamp"}), 400
-        raw = raw.filter(created_at__lt=cut_off)
-    elif before_id:
-        try:
-            oid = ObjectId(before_id)
+            query["created_at"] = {"$lt": date_parser.isoparse(before_ts)}
         except Exception:
-            return jsonify({"err": "Invalid before_id"}), 400
-        raw = raw.filter(id__lt=oid)
+            return jsonify(err="Invalid before timestamp"), 400
+    elif before_id := request.args.get("before_id"):
+        try:
+            query["_id"] = {"$lt": ObjectId(before_id)}
+        except Exception:
+            return jsonify(err="Invalid before_id"), 400
 
-    raw = raw.order_by("-created_at", "-id").limit(limit)
-    messages = [msg.to_dict() for msg in raw]
+    cursor = (
+        Message.objects(__raw__=query)
+               .order_by("-created_at")
+               .limit(limit)
+               .as_pymongo()
+    ).batch_size(10)
 
-    next_cursor = None
-    if len(messages) == limit:
-        last = messages[-1]
-        next_cursor = last["created_at"].isoformat()
+    msgs = []
+    for doc in cursor:
+        doc["id"] = str(doc.pop("_id"))
+        doc["created_at"] = doc["created_at"].isoformat()
+        msgs.append(doc)
 
-    resp = {"messages": messages}
-    if next_cursor:
-        resp["next_cursor"] = next_cursor
-
+    resp = {"messages": msgs}
+    if len(msgs) == limit:
+        resp["next_cursor"] = msgs[-1]["created_at"]
     return jsonify(resp), 200
 
 

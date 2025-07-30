@@ -5,7 +5,6 @@ from mongoengine import (
     StringField,
     EmailField,
     ValidationError,
-    URLField,
     ReferenceField,
     ListField,
     CASCADE,
@@ -56,10 +55,7 @@ class User(TimestampedDocument):
     }
 
     def to_dict(self):
-        return {
-            "id": str(self.id),
-            "username": self.username
-        }
+        return {"id": str(self.id), "username": self.username}
 
 
 # GROUP #########################################################################
@@ -162,8 +158,7 @@ class Message(TimestampedDocument):
                 "fields": ["reply_to"],
                 "sparse": True,
             },
-            "-created_at",
-            "channel",
+            {"fields": ["channel", "-created_at"]},
             "is_deleted",
         ],
     }
