@@ -56,11 +56,13 @@ def create_app(config_object="config.DevelopmentConfig"):
     from .routes.groups import groups
     from .routes.memberships import memberships
     from .routes.channels import channels
+    from .routes.messages import messages
 
     app.register_blueprint(auth, urlprefix='/')
     app.register_blueprint(groups, urlprefix='/')
     app.register_blueprint(memberships, urlprefix='/')
     app.register_blueprint(channels, urlprefix='/')
+    app.register_blueprint(messages, urlprefix='/')
 
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
