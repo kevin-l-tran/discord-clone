@@ -146,8 +146,8 @@ def create_gemini_message(group_id, channel_id):
             content=content,
             reply_to=reply_to,
         )
-    except Exception:
-        current_app.logger.exception("Unexpected error in create_broadcast_message")
-        return jsonify({"err": "Internal server error"}), 500
+    except Exception as e:
+        current_app.logger.exception("Unexpected error in create_broadcast_message: %s", e)
+        return jsonify({"err": "Internal server error:"}), 500
 
     return jsonify(msg.to_json()), 201
