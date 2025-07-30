@@ -55,6 +55,12 @@ class User(TimestampedDocument):
         ]
     }
 
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "username": self.username
+        }
+
 
 # GROUP #########################################################################
 

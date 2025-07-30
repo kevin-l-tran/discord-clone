@@ -3,7 +3,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError
 
 from ..services.utilities import require_group_membership
-from ..db.models import Group, GroupMembership, RoleType
+from ..db.models import Group, GroupMembership, RoleType, User
 
 memberships = Blueprint("memberships", __name__)
 
@@ -25,8 +25,13 @@ def get_member(group_id, member_id):
         return jsonify({"err": "Membership not found"}), 404
     except ValidationError:
         return jsonify({"err": "Invalid membership ID"}), 400
+    
+    payload = {
+        "membership": member.to_dict(),
+        "user": member.user.to_dict(),
+    }
 
-    return jsonify(member.to_dict()), 200
+    return jsonify(payload), 200
 
 
 @memberships.route("/group/<group_id>/members", methods=["GET"])
@@ -42,9 +47,12 @@ def get_members(group_id):
 
     members = []
 
-    raw = GroupMembership.objects(group=group)
+    raw = GroupMembership.objects(group=group).select_related()
     for member in raw:
-        members.append(member.to_dict())
+        members.append({
+            "membership": member.to_dict(),
+            "user": member.user.to_dict()
+        })
 
     return jsonify(members), 200
 
