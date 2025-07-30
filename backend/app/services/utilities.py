@@ -1,3 +1,4 @@
+from bson import ObjectId
 import requests
 import datetime
 
@@ -295,3 +296,13 @@ def require_group_membership(
         return wrapper
 
     return decorator
+
+
+def stringify_objectids(obj):
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {k: stringify_objectids(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [stringify_objectids(v) for v in obj]
+    return obj

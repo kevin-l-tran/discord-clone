@@ -6,7 +6,7 @@ from mongoengine.errors import DoesNotExist, ValidationError
 from dateutil import parser as date_parser
 
 from ..db.models import Channel, ChannelType, Message
-from ..services.utilities import require_group_membership
+from ..services.utilities import require_group_membership, stringify_objectids
 from ..services.message_handler import create_broadcast_message
 
 messages = Blueprint("messages", __name__)
@@ -27,6 +27,7 @@ def get_messages(group_id, channel_id):
 
     limit = max(1, request.args.get("limit", 50, int))
 
+    # 2) build your PyMongo query dict
     query = {"channel": ObjectId(channel_id)}
     if before_ts := request.args.get("before"):
         try:
@@ -39,22 +40,19 @@ def get_messages(group_id, channel_id):
         except Exception:
             return jsonify(err="Invalid before_id"), 400
 
+    # 3) raw cursor, sorted, limited, batched
     cursor = (
-        Message.objects(__raw__=query)
-               .order_by("-created_at")
-               .limit(limit)
-               .as_pymongo()
+        Message.objects(__raw__=query).order_by("-created_at").limit(limit).as_pymongo()
     ).batch_size(10)
 
-    msgs = []
-    for doc in cursor:
-        doc["id"] = str(doc.pop("_id"))
-        doc["created_at"] = doc["created_at"].isoformat()
-        msgs.append(doc)
+    docs = [stringify_objectids(doc) for doc in cursor]
 
-    resp = {"messages": msgs}
-    if len(msgs) == limit:
-        resp["next_cursor"] = msgs[-1]["created_at"]
+    for doc in docs:
+        doc["id"] = doc.pop("_id")
+
+    resp = {"messages": docs}
+    if len(docs) == limit:
+        resp["next_cursor"] = docs[-1]["created_at"]
     return jsonify(resp), 200
 
 
