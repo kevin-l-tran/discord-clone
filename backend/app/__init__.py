@@ -67,11 +67,11 @@ def create_app(config_object="config.DevelopmentConfig"):
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
     socketio.init_app(app)
-    
-    import app.services.message_handler
 
     @app.errorhandler(RequestEntityTooLarge)
     def handle_file_too_large(e):
         return jsonify({"err": "Payload too large"}), 413
+    
+    from .services.message_handler import on_join, on_leave
 
     return app
