@@ -255,7 +255,7 @@ def delete_member(group_id, member_id):
         return jsonify({"err": "Could not delete Membership"}), 500
 
 
-@memberships.route("/group/<group_id>/members/", methods=["DELETE"])
+@memberships.route("/group/<group_id>/members", methods=["DELETE"])
 @jwt_required()
 @require_group_membership(roles=[RoleType.OWNER], group_arg="group_id")
 def delete_self_member(group_id):
