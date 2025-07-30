@@ -25,7 +25,33 @@ def get_member(group_id, member_id):
         return jsonify({"err": "Membership not found"}), 404
     except ValidationError:
         return jsonify({"err": "Invalid membership ID"}), 400
-    
+
+    payload = {
+        "membership": member.to_dict(),
+        "user": member.user.to_dict(),
+    }
+
+    return jsonify(payload), 200
+
+
+@memberships.route("/group/<group_id>/members/self", methods=["GET"])
+@jwt_required()
+@require_group_membership(group_arg="group_id")
+def your_membership(group_id):
+    try:
+        group = Group.objects.get(id=group_id)
+    except DoesNotExist:
+        return jsonify({"err": "Group not found"}), 404
+    except ValidationError:
+        return jsonify({"err": "Invalid group ID"}), 400
+
+    try:
+        member = GroupMembership.objects.get(user=get_jwt_identity(), group=group)
+    except DoesNotExist:
+        return jsonify({"err": "Membership not found"}), 404
+    except ValidationError:
+        return jsonify({"err": "Invalid membership ID"}), 400
+
     payload = {
         "membership": member.to_dict(),
         "user": member.user.to_dict(),
@@ -49,10 +75,7 @@ def get_members(group_id):
 
     raw = GroupMembership.objects(group=group).select_related()
     for member in raw:
-        members.append({
-            "membership": member.to_dict(),
-            "user": member.user.to_dict()
-        })
+        members.append({"membership": member.to_dict(), "user": member.user.to_dict()})
 
     return jsonify(members), 200
 
