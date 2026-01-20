@@ -16,8 +16,14 @@ class BaseConfig:
     G_SECRETS_FILE           = os.getenv("G_SECRETS_FILE")
     G_REDIRECT_URI           = os.getenv("G_REDIRECT_URI", "http://localhost:5000/calendar/callback")
     G_SCOPES                 = ["https://www.googleapis.com/auth/calendar"]
+    GCS_BUCKET_NAME          = os.getenv("GCS_BUCKET_NAME")
+
+    GEMINI_API_KEY           = os.getenv("GEMINI_API_KEY")
 
     NINJA_API_KEY            = os.getenv("NINJA_API_KEY")
+
+    MAX_UPLOAD_BYTES         = int(os.getenv("MAX_UPLOAD_BYTES"))
+    MAX_CONTENT_LENGTH       = int(os.getenv("MAX_UPLOAD_BYTES"))
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

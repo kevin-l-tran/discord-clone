@@ -1,16 +1,19 @@
 import certifi
+import google.generativeai as genai
 
-from flask import Flask, current_app
+from flask import Flask, current_app, jsonify
 from flask_cors import CORS
 from mongoengine import connect, disconnect, get_connection
 from pymongo.errors import ServerSelectionTimeoutError, ConfigurationError
+from werkzeug.exceptions import RequestEntityTooLarge
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
 flask_bcrypt = Bcrypt()
 jwt = JWTManager()
-gcreds = None
+socketio = SocketIO(cors_allowed_origins="*") # later replace with FRONTEND_URL
 
 load_dotenv()
 
@@ -41,11 +44,34 @@ def create_app(config_object="config.DevelopmentConfig"):
             disconnect()
             raise
 
-    from .auth import auth
+        try:
+            genai.configure(api_key=current_app.config["GEMINI_API_KEY"])
+            app.logger.info("✅ Gemini (Generative AI) initialized successfully")
+            app.gemini = genai
+        except Exception as e:
+            app.logger.critical("❌ Gemini initialization failed: %s", e)
+            raise
+
+    from .routes.auth import auth
+    from .routes.groups import groups
+    from .routes.memberships import memberships
+    from .routes.channels import channels
+    from .routes.messages import messages
 
     app.register_blueprint(auth, urlprefix='/')
+    app.register_blueprint(groups, urlprefix='/')
+    app.register_blueprint(memberships, urlprefix='/')
+    app.register_blueprint(channels, urlprefix='/')
+    app.register_blueprint(messages, urlprefix='/')
 
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
+    socketio.init_app(app)
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_file_too_large(e):
+        return jsonify({"err": "Payload too large"}), 413
+    
+    from .services.message_handler import on_join, on_leave
 
     return app

@@ -7,21 +7,19 @@ from flask_jwt_extended import (
 )
 from bson import ObjectId
 
-from . import jwt
-from .models import User
-from .utilities import require_json_fields, api_get
+from .. import jwt
+from ..db.models import User
+from ..services.utilities import require_json_fields, api_get
 
 auth = Blueprint("auth", __name__)
 
 
 @auth.route("/signin", methods=["POST"])
+@require_json_fields("username", "password")
 def signin():
-    data = require_json_fields("username", "password")
-    if isinstance(data, tuple):
-        return data
-
-    username = data["username"]
-    password = data["password"]
+    data = request.json_data
+    username = data["username"].strip()
+    password = data["password"].strip()
 
     user = User.objects(username__iexact=username).first()
 
@@ -35,14 +33,12 @@ def signin():
 
 
 @auth.route("/signup", methods=["POST"])
+@require_json_fields("email", "username", "password")
 def signup():
-    data = require_json_fields("username", "email", "password")
-    if isinstance(data, tuple):
-        return data
-
-    username = data["username"]
-    email = data["email"]
-    password = data["password"]
+    data = request.json_data
+    username = data["username"].strip()
+    email = data["email"].strip()
+    password = data["password"].strip()
 
     if len(username) < 4:
         return jsonify({"err": "Username too short"}), 422
@@ -76,7 +72,11 @@ def signup():
     user.username = username
     user.email = email
     user.set_password(password)
-    user.save(force_insert=True)
+    try:
+        user.save(force_insert=True)
+    except Exception as e:
+        current_app.logger.exception("Failed to save User: %s", e)
+        return jsonify({"err": "Could not create user"}), 500
 
     access_token = create_access_token(identity=user)
     return (
@@ -151,12 +151,17 @@ def verify_token():
     return jsonify({"msg": "Token is valid", "user": current_user}), 200
 
 
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data["sub"]
+    return User.objects(id=ObjectId(identity)).first()
+
+
 @jwt.user_identity_loader
 def user_identity_lookup(user):
     return str(user.id)
 
 
-@jwt.user_lookup_loader
-def user_lookup_callback(_jwt_header, jwt_data):
-    identity = jwt_data["sub"]
-    return User.objects(id=ObjectId(identity)).first()
+@jwt.additional_claims_loader
+def add_claims_to_access_token(user):
+    return {"username": user.username}
