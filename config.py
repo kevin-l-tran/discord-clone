@@ -14,6 +14,7 @@ class BaseConfig:
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(hours=1)
 
     G_SECRETS_FILE           = os.getenv("G_SECRETS_FILE")
+    G_SECRETS_ENCODED        = os.getenv("G_SECRETS_ENCODED")
     G_REDIRECT_URI           = os.getenv("G_REDIRECT_URI", "http://localhost:5000/calendar/callback")
     G_SCOPES                 = ["https://www.googleapis.com/auth/calendar"]
     GCS_BUCKET_NAME          = os.getenv("GCS_BUCKET_NAME")

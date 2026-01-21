@@ -1,4 +1,5 @@
-from bson import ObjectId
+import base64
+import json
 import requests
 import datetime
 
@@ -11,6 +12,7 @@ from google.oauth2 import service_account
 from google.cloud import storage
 from datetime import timedelta
 from functools import wraps
+from bson import ObjectId
 from PIL import Image
 
 from ..db.models import GroupMembership, RoleType
@@ -116,8 +118,13 @@ def upload_to_gcs(file: FileStorage, bucket_name: str, blob_name: str) -> str:
             If any error occurs during interaction with GCS (authentication,
             permissions, network issues, etc.).
     """
-    key_path = current_app.config.get("G_SECRETS_FILE")
-    creds = service_account.Credentials.from_service_account_file(key_path)
+    service_account_json_bytes = base64.base64decode(
+        current_app.config.get("G_SECRETS_ENCODED")
+    )
+    service_account_json = service_account_json_bytes.decode("utf-8")
+    creds_info = json.loads(service_account_json)
+    creds = service_account.Credentials.from_service_account_info(creds_info)
+
     storage_client = storage.Client(credentials=creds, project=creds.project_id)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -154,8 +161,13 @@ def generate_signed_url(
         google.api_core.exceptions.GoogleAPIError:
             If there’s a problem communicating with GCS or signing the URL.
     """
-    key_path = current_app.config.get("G_SECRETS_FILE")
-    creds = service_account.Credentials.from_service_account_file(key_path)
+    service_account_json_bytes = base64.base64decode(
+        current_app.config.get("G_SECRETS_ENCODED")
+    )
+    service_account_json = service_account_json_bytes.decode("utf-8")
+    creds_info = json.loads(service_account_json)
+    creds = service_account.Credentials.from_service_account_info(creds_info)
+
     storage_client = storage.Client(credentials=creds, project=creds.project_id)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
@@ -183,8 +195,13 @@ def delete_blob(bucket_name: str, blob_name: str) -> None:
         google.api_core.exceptions.GoogleAPIError:
             For other GCS errors (permissions, network issues, etc.).
     """
-    key_path = current_app.config.get("G_SECRETS_FILE")
-    creds = service_account.Credentials.from_service_account_file(key_path)
+    service_account_json_bytes = base64.base64decode(
+        current_app.config.get("G_SECRETS_ENCODED")
+    )
+    service_account_json = service_account_json_bytes.decode("utf-8")
+    creds_info = json.loads(service_account_json)
+    creds = service_account.Credentials.from_service_account_info(creds_info)
+
     storage_client = storage.Client(credentials=creds, project=creds.project_id)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
