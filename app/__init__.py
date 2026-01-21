@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 flask_bcrypt = Bcrypt()
 jwt = JWTManager()
-socketio = SocketIO(cors_allowed_origins="*") # later replace with FRONTEND_URL
+socketio = SocketIO(cors_allowed_origins="*")  # later replace with FRONTEND_URL
 
 load_dotenv()
 
@@ -22,22 +22,31 @@ def create_app(config_object="config.DevelopmentConfig"):
     app = Flask(__name__)
     app.config.from_object(config_object)
 
-    CORS(app)
-
     with app.app_context():
         # CORS(app, origins=[current_app.config['FRONTEND_URL']]); use when frontend is deployed
+        CORS(
+            app,
+            resources={
+                r"/*": {
+                    "origins": [
+                        current_app.config["FRONTEND_URL"],
+                        "http://localhost:5173",
+                    ]
+                }
+            },
+        )
 
         try:
             connect(
-                db=current_app.config['MONGO_DB'],
-                host=current_app.config['MONGO_HOST'],
-                port=current_app.config['MONGO_PORT'],
+                db=current_app.config["MONGO_DB"],
+                host=current_app.config["MONGO_HOST"],
+                port=current_app.config["MONGO_PORT"],
                 serverSelectionTimeoutMS=5000,
                 tls=True,
                 tlsCAFile=certifi.where(),
             )
             client = get_connection()
-            client.admin.command('ping')
+            client.admin.command("ping")
             app.logger.info("✅ MongoDB connection established")
         except (ServerSelectionTimeoutError, ConfigurationError) as exc:
             app.logger.critical("❌ MongoDB connection failed: %s", exc)
@@ -58,11 +67,11 @@ def create_app(config_object="config.DevelopmentConfig"):
     from .routes.channels import channels
     from .routes.messages import messages
 
-    app.register_blueprint(auth, urlprefix='/')
-    app.register_blueprint(groups, urlprefix='/')
-    app.register_blueprint(memberships, urlprefix='/')
-    app.register_blueprint(channels, urlprefix='/')
-    app.register_blueprint(messages, urlprefix='/')
+    app.register_blueprint(auth, urlprefix="/")
+    app.register_blueprint(groups, urlprefix="/")
+    app.register_blueprint(memberships, urlprefix="/")
+    app.register_blueprint(channels, urlprefix="/")
+    app.register_blueprint(messages, urlprefix="/")
 
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
@@ -71,7 +80,7 @@ def create_app(config_object="config.DevelopmentConfig"):
     @app.errorhandler(RequestEntityTooLarge)
     def handle_file_too_large(e):
         return jsonify({"err": "Payload too large"}), 413
-    
+
     from .services.message_handler import on_join, on_leave
 
     return app
