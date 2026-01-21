@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 
 flask_bcrypt = Bcrypt()
 jwt = JWTManager()
+socketio = SocketIO(async_mode="threading")  # later replace with FRONTEND_URL
+
 load_dotenv()
 
 
@@ -21,10 +23,7 @@ def create_app(config_object="config.DevelopmentConfig"):
     app.config.from_object(config_object)
 
     with app.app_context():
-        socketio = SocketIO(
-            cors_allowed_origins=current_app.config["FRONTEND_URL"],
-            async_mode="threading",
-        )
+        # CORS(app, origins=[current_app.config['FRONTEND_URL']]); use when frontend is deployed
         CORS(
             app,
             resources={
@@ -76,7 +75,13 @@ def create_app(config_object="config.DevelopmentConfig"):
 
     flask_bcrypt.init_app(app)
     jwt.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(
+        app,
+        cors_allowed_origins=[
+            app.config["FRONTEND_URL"],
+            "http://localhost:5173",
+        ],
+    )
 
     @app.errorhandler(RequestEntityTooLarge)
     def handle_file_too_large(e):
