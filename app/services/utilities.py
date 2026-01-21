@@ -118,7 +118,7 @@ def upload_to_gcs(file: FileStorage, bucket_name: str, blob_name: str) -> str:
             If any error occurs during interaction with GCS (authentication,
             permissions, network issues, etc.).
     """
-    service_account_json_bytes = base64.base64decode(
+    service_account_json_bytes = base64.b64decode(
         current_app.config.get("G_SECRETS_ENCODED")
     )
     service_account_json = service_account_json_bytes.decode("utf-8")
@@ -161,7 +161,7 @@ def generate_signed_url(
         google.api_core.exceptions.GoogleAPIError:
             If there’s a problem communicating with GCS or signing the URL.
     """
-    service_account_json_bytes = base64.base64decode(
+    service_account_json_bytes = base64.b64decode(
         current_app.config.get("G_SECRETS_ENCODED")
     )
     service_account_json = service_account_json_bytes.decode("utf-8")
@@ -195,7 +195,7 @@ def delete_blob(bucket_name: str, blob_name: str) -> None:
         google.api_core.exceptions.GoogleAPIError:
             For other GCS errors (permissions, network issues, etc.).
     """
-    service_account_json_bytes = base64.base64decode(
+    service_account_json_bytes = base64.b64decode(
         current_app.config.get("G_SECRETS_ENCODED")
     )
     service_account_json = service_account_json_bytes.decode("utf-8")
